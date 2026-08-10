@@ -1,11 +1,5 @@
-import {
-  IsBoolean,
-  IsEmail,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { UserProfile } from '../enums/user-profile.enum';
 
 export class CreateUserDto {
   @IsString()
@@ -41,4 +35,10 @@ export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
   phone!: string;
+
+  @IsEnum(UserProfile, {
+    message: `El perfil debe ser uno de los siguientes valores: ${Object.values(UserProfile).join(', ')}`,
+  })
+  @IsNotEmpty()
+  profile!: UserProfile;
 }
