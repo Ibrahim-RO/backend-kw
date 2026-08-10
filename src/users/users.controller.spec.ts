@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
+import { ProfilesGuard } from './guards/profiles.guard';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -14,7 +15,10 @@ describe('UsersController', () => {
           useValue: {},
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(ProfilesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<UsersController>(UsersController);
   });

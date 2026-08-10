@@ -2,11 +2,18 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
+import { UnauthorizedException } from '@nestjs/common';
 
 describe('UsersService', () => {
   let service: UsersService;
   const userRepository = {
     findAndCount: jest.fn(),
+    findOne: jest.fn(),
+  };
+  const jwtService = {
+    sign: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -16,6 +23,10 @@ describe('UsersService', () => {
         {
           provide: getRepositoryToken(User),
           useValue: userRepository,
+        },
+        {
+          provide: JwtService,
+          useValue: jwtService,
         },
       ],
     }).compile();
@@ -63,5 +74,40 @@ describe('UsersService', () => {
     expect(result.meta).toEqual(
       expect.objectContaining({ page: 1, limit: 10, totalPages: 2 }),
     );
+  });
+
+  it('returns the user without password and a JWT for valid credentials', async () => {
+    const password = await bcrypt.hash('secret123', 10);
+    userRepository.findOne.mockResolvedValue({
+      user_id: 7,
+      name: 'Ana',
+      email: 'ana@example.com',
+      password,
+      status: true,
+    });
+    jwtService.sign.mockReturnValue('signed.jwt');
+
+    await expect(
+      service.login({ email: ' ANA@EXAMPLE.COM ', password: 'secret123' }),
+    ).resolves.toEqual({
+      success: true,
+      data: {
+        user_id: 7,
+        name: 'Ana',
+        email: 'ana@example.com',
+        status: true,
+      },
+      token: 'signed.jwt',
+    });
+    expect(jwtService.sign).toHaveBeenCalledWith({ id: 7 });
+  });
+
+  it('rejects invalid credentials without revealing which field failed', async () => {
+    userRepository.findOne.mockResolvedValue(null);
+
+    await expect(
+      service.login({ email: 'missing@example.com', password: 'wrong' }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(jwtService.sign).not.toHaveBeenCalled();
   });
 });

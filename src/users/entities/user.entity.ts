@@ -1,49 +1,60 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { UserProfile } from '../enums/user-profile.enum';
 
 @Entity({ name: 'users' })
 export class User {
+  @PrimaryGeneratedColumn()
+  user_id!: number;
 
-    @PrimaryGeneratedColumn()
-    user_id!: number;
+  @Column('text')
+  name!: string;
 
-    @Column('text')
-    name!: string
+  @Column('text')
+  last_name!: string;
 
-    @Column('text')
-    last_name!: string
+  @Column('text')
+  surname_name!: string;
 
-    @Column('text')
-    surname_name!: string
+  @Column('text', {
+    unique: true,
+  })
+  email!: string;
 
-    @Column('text', {
-        unique: true
-    })
-    email!: string
+  @Column('text', {
+    select: false,
+  })
+  password!: string;
 
-    @Column('text', {
-        select: false
-    })
-    password!: string
+  @Column('text')
+  phone!: string;
 
-    @Column('text')
-    phone!: string
+  @Column('text', {
+    nullable: true,
+    default: '',
+  })
+  avatar_url?: string;
 
-    @Column('text', {
-        nullable: true,
-        default: ''
-    })
-    avatar_url?: string
-    
-    @Column('boolean', {
-        default: true
-    })
-    status!: boolean
+  @Column('boolean', {
+    default: true,
+  })
+  status!: boolean;
 
-    @CreateDateColumn({ type: 'timestamp' })
-    created_at!: Date
+  @Column({
+    type: 'enum',
+    enum: UserProfile,
+    default: UserProfile.USER,
+  })
+  profile!: UserProfile;
 
-    @UpdateDateColumn({ type: 'timestamp' })
-    updated_at!: Date
+  @CreateDateColumn({ type: 'timestamp' })
+  created_at!: Date;
 
-
+  @UpdateDateColumn({ type: 'timestamp' })
+  updated_at!: Date;
 }
