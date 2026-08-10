@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { UsersModule } from './users/users.module';
+import { BlogModule } from './blog/blog.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CommonModule } from './common/common.module';
@@ -27,6 +28,7 @@ import { CommonModule } from './common/common.module';
       })
     }),
     UsersModule,
+    BlogModule,
     CommonModule
   ],
   controllers: [],
