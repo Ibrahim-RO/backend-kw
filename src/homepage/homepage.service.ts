@@ -7,8 +7,8 @@ import { UpdateHomepageDto } from './dto/update-homepage.dto';
 const defaults: HomepageDocument = {
   sections: [
     { id: 'hero', label: 'Portada', visible: true, title: 'Encuentra la casa de tus sueños', subtitle: 'El camino a tu nuevo hogar empieza aquí con los expertos.', imageUrl: '/Fondo_New_Natural.png', imageAlt: 'Residencia contemporánea' },
+    { id: 'properties', label: 'Propiedades cerca de ti', visible: true, title: 'Propiedades cerca de ti', buttonLabel: 'Ver más...', buttonUrl: '/propiedades' },
     { id: 'awards', label: 'Reconocimientos', visible: true, title: 'Una compañía construida por agentes', body: 'Reconocimientos que respaldan nuestra experiencia.' },
-    { id: 'properties', label: 'Propiedades destacadas', visible: true, title: 'Propiedades destacadas', subtitle: 'Encuentra tu próxima propiedad.' },
     { id: 'about', label: 'Acerca de KW', visible: true, title: '¿QUÉ ES KW?', body: 'Empresa número 1 de entrenamiento, networking, aprendizaje y coaching para agentes inmobiliarios.', imageUrl: '/section-banner-image.png', imageAlt: 'Profesionales inmobiliarios colaborando' },
     { id: 'join', label: 'Únete', visible: true, title: 'Construye una carrera extraordinaria', buttonLabel: 'Conoce más', buttonUrl: '#contacto' },
     { id: 'family', label: 'Family Reunion', visible: true, title: 'Family Reunion', body: 'Aprende, conecta y crece con nuestra comunidad.' },
