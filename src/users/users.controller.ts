@@ -13,11 +13,14 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { PaginationDto } from '../common/pagination/pagination.dto';
 import { LoginDto } from './dto/login.dto';
 import { Profiles } from './decorators/profiles.decorator';
 import { UserProfile } from './enums/user-profile.enum';
 import { ProfilesGuard } from './guards/profiles.guard';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { User } from './entities/user.entity';
 
 @Controller('users')
 export class UsersController {
@@ -33,6 +36,22 @@ export class UsersController {
   @Profiles(UserProfile.ADMIN)
   findAll(@Query() paginationDto: PaginationDto) {
     return this.usersService.findAll(paginationDto);
+  }
+
+  @Get('me')
+  @UseGuards(ProfilesGuard)
+  getMe(@CurrentUser() user: User) {
+    const { password, ...safeUser } = user;
+    return { success: true, data: safeUser };
+  }
+
+  @Patch('me')
+  @UseGuards(ProfilesGuard)
+  updateMe(
+    @CurrentUser() user: User,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ) {
+    return this.usersService.updateProfile(user.user_id, updateProfileDto);
   }
 
   @Get(':id')

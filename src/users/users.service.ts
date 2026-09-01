@@ -17,6 +17,7 @@ import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import { JWTPayload } from './interfaces/jwt-payload.interface';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class UsersService {
@@ -83,6 +84,56 @@ export class UsersService {
     if (password) {
       user.password = await bcrypt.hash(password, 10);
     }
+
+    try {
+      const updatedUser = await this.userRepository.save(user);
+      const { password: _, ...safeUser } = updatedUser;
+
+      return {
+        success: true,
+        data: safeUser,
+      };
+    } catch (error) {
+      this.handleDBExceptions(error);
+    }
+  }
+
+  async updateProfile(id: number, updateProfileDto: UpdateProfileDto) {
+    const { password, current_password, ...userData } = updateProfileDto;
+
+    const user = await this.userRepository.findOne({
+      where: { user_id: id, status: true },
+      select: {
+        user_id: true,
+        name: true,
+        last_name: true,
+        surname_name: true,
+        email: true,
+        password: true,
+        phone: true,
+        avatar_url: true,
+        status: true,
+        profile: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
+    if (!user)
+      throw new NotFoundException(`Usuario con id: ${id} no encontrado`);
+
+    if (password) {
+      const currentPasswordMatches =
+        current_password && (await bcrypt.compare(current_password, user.password));
+
+      if (!currentPasswordMatches) {
+        throw new UnauthorizedException('La contraseña actual no es correcta');
+      }
+
+      user.password = await bcrypt.hash(password, 10);
+    }
+
+    Object.assign(user, userData);
 
     try {
       const updatedUser = await this.userRepository.save(user);
