@@ -42,6 +42,13 @@ Perfiles definidos en `UserProfile`: `admin`, `marketing`, `seo`, `usuario`.
 - `admin` tiene todos los permisos.
 - `marketing`, `seo` y `usuario` **aún no tienen reglas definidas** — no asumas qué pueden o no hacer.
 - **Regla por defecto:** cuando crees un endpoint nuevo y no se te indique explícitamente qué perfiles deben tener acceso, protégelo con `@UseGuards(ProfilesGuard)` + `@Profiles(UserProfile.ADMIN)` (igual que `findAll`, `findOne`, `update`, `remove` en `users.controller.ts`). Solo déjalo abierto (como `create` y `login`) si el flujo lo requiere explícitamente.
+- **Excepción de autoservicio:** `GET/PATCH /users/me` usan `@UseGuards(ProfilesGuard)` SIN `@Profiles(...)` — cualquier usuario autenticado puede leer/editar su propio registro (vía `@CurrentUser()`), sin importar su perfil. No es una ruta abierta (sigue exigiendo JWT válido), solo no restringe por perfil. Estas rutas van declaradas ANTES de `GET/PATCH /users/:id` en el controller, porque si no Express intenta resolver `"me"` como si fuera el `:id`. `UpdateProfileDto` (el DTO de `PATCH /users/me`) deliberadamente no incluye `profile` ni `status` — el `ValidationPipe` global (`forbidNonWhitelisted`) rechaza cualquier intento de mandarlos, así un usuario no puede auto-promoverse. Cambiar la contraseña por esta vía exige `current_password`, verificada con bcrypt antes de aceptar la nueva (a diferencia del `update()` que usa un ADMIN sobre otro usuario, que no pide la contraseña actual).
+
+## Módulo `homepage` (excepción de forma)
+
+`src/homepage` no sigue el patrón CRUD de `users`/`blog` — es un documento único (`homepage_settings`, una sola fila) con columnas `draft`/`published` tipo `jsonb` que guardan todo el árbol de secciones de la home (ver `HomepageDocument` en `entities/homepage-settings.entity.ts`). `GET /homepage` (público, sin guard) devuelve `published`; `GET/PATCH /admin/homepage` y `POST /admin/homepage/publish` (ADMIN) leen/escriben `draft` y lo publican. Los defaults de cada sección (`id`, `title`, etc.) viven hardcodeados en `homepage.service.ts` y se guardan una sola vez, la primera vez que se crea la fila — cambiarlos después no reescribe una fila que ya existe, hay que actualizarla vía `POST /admin/homepage/publish`. Si agregas una sección nueva a la home, actualiza el arreglo `defaults.sections` aquí Y el `sectionDefaults` equivalente en `frontend-kw` (`src/features/admin/homepage/section-defaults.ts`) — deben quedar alineados.
+
+No repliques esta forma para un recurso nuevo que sí sea una lista de entidades (usa `users`/`blog` como referencia para eso); esta forma es específica para "un solo documento de configuración editable".
 
 ## Base de datos
 
