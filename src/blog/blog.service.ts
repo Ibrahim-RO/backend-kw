@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
+import { LessThanOrEqual, Not, Repository } from 'typeorm';
 import { BlogPost } from './entities/blog-post.entity';
 import { CreateBlogDto } from './dto/create-blog.dto';
 import { UpdateBlogDto } from './dto/update-blog.dto';
@@ -49,6 +49,33 @@ export class BlogService {
       order: { created_at: 'DESC' },
       relations: { author: true },
     });
+  }
+
+  async findPublished(paginationDto: PaginationDto) {
+    return paginate(this.blogRepository, paginationDto, {
+      where: {
+        status: BlogStatus.PUBLISHED,
+        published_at: LessThanOrEqual(new Date()),
+      },
+      order: { published_at: 'DESC' },
+      relations: { author: true },
+    });
+  }
+
+  async findPublishedBySlug(slug: string) {
+    const post = await this.blogRepository.findOne({
+      where: {
+        slug,
+        status: BlogStatus.PUBLISHED,
+        published_at: LessThanOrEqual(new Date()),
+      },
+      relations: { author: true, attachments: true },
+    });
+
+    if (!post)
+      throw new NotFoundException(`Entrada de blog no encontrada`);
+
+    return post;
   }
 
   async findOne(id: number) {
