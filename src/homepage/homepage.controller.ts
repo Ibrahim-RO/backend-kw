@@ -8,7 +8,9 @@ import { HomepageService } from './homepage.service';
 import { UpdateHomepageDto } from './dto/update-homepage.dto';
 import { ProfilesGuard } from '../users/guards/profiles.guard';
 import { Profiles } from '../users/decorators/profiles.decorator';
+import { RequireModule } from '../users/decorators/modules.decorator';
 import { UserProfile } from '../users/enums/user-profile.enum';
+import { ModuleKey } from '../users/enums/module-key.enum';
 
 @Controller('homepage')
 export class HomepageController {
@@ -18,7 +20,8 @@ export class HomepageController {
 
 @Controller('admin/homepage')
 @UseGuards(ProfilesGuard)
-@Profiles(UserProfile.ADMIN)
+@Profiles(UserProfile.ADMIN, UserProfile.MARKETING)
+@RequireModule(ModuleKey.HOMEPAGE)
 export class AdminHomepageController {
   constructor(private readonly service: HomepageService) {}
   @Get() get() { return this.service.getAdmin(); }

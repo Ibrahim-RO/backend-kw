@@ -48,9 +48,15 @@ export class User {
   @Column({
     type: 'enum',
     enum: UserProfile,
-    default: UserProfile.USER,
+    default: UserProfile.MARKETING,
   })
   profile!: UserProfile;
+
+  // Solo aplica cuando `profile` es MARKETING — qué módulos del panel puede
+  // ver/usar (ver ModuleKey + ProfilesGuard/@RequireModule). ADMIN siempre
+  // tiene acceso a todo sin importar este campo.
+  @Column('text', { array: true, nullable: true, default: '{}' })
+  modules!: string[];
 
   @CreateDateColumn({ type: 'timestamp' })
   created_at!: Date;

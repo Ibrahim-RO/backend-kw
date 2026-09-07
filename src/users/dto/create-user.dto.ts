@@ -1,5 +1,14 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import {
+  IsArray,
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 import { UserProfile } from '../enums/user-profile.enum';
+import { ModuleKey } from '../enums/module-key.enum';
 
 export class CreateUserDto {
   @IsString()
@@ -41,4 +50,14 @@ export class CreateUserDto {
   })
   @IsNotEmpty()
   profile!: UserProfile;
+
+  // Solo relevante si profile es MARKETING; para ADMIN se ignora (siempre
+  // tiene acceso a todo) — ver UsersService.create.
+  @IsArray()
+  @IsEnum(ModuleKey, {
+    each: true,
+    message: `Cada módulo debe ser uno de los siguientes valores: ${Object.values(ModuleKey).join(', ')}`,
+  })
+  @IsOptional()
+  modules?: ModuleKey[];
 }

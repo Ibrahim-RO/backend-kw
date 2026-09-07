@@ -11,8 +11,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Request } from 'express';
 import { Repository } from 'typeorm';
 import { PROFILES_KEY } from '../decorators/profiles.decorator';
+import { MODULE_KEY } from '../decorators/modules.decorator';
 import { User } from '../entities/user.entity';
 import { UserProfile } from '../enums/user-profile.enum';
+import { ModuleKey } from '../enums/module-key.enum';
 import { JWTPayload } from '../interfaces/jwt-payload.interface';
 
 export type AuthenticatedRequest = Request & { user: User };
@@ -61,6 +63,21 @@ export class ProfilesGuard implements CanActivate {
     if (allowedProfiles?.length && !allowedProfiles.includes(user.profile)) {
       throw new ForbiddenException(
         'No tienes el perfil requerido para acceder a este recurso',
+      );
+    }
+
+    const requiredModule = this.reflector.getAllAndOverride<ModuleKey>(
+      MODULE_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+
+    if (
+      requiredModule &&
+      user.profile !== UserProfile.ADMIN &&
+      !(user.modules ?? []).includes(requiredModule)
+    ) {
+      throw new ForbiddenException(
+        'No tienes acceso a este módulo del panel',
       );
     }
 

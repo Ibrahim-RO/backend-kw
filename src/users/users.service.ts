@@ -18,6 +18,7 @@ import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import { JWTPayload } from './interfaces/jwt-payload.interface';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UserProfile } from './enums/user-profile.enum';
 
 @Injectable()
 export class UsersService {
@@ -31,10 +32,11 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto) {
-    const { password, ...userData } = createUserDto;
+    const { password, modules, ...userData } = createUserDto;
 
     const user = this.userRepository.create({
       ...userData,
+      modules: userData.profile === UserProfile.MARKETING ? (modules ?? []) : [],
       password: await bcrypt.hash(password, 10),
     });
 
@@ -77,9 +79,16 @@ export class UsersService {
   async update(id: number, updateUserDto: UpdateUserDto) {
     const user = await this.findOne(id);
 
-    const { password, ...userData } = updateUserDto;
+    const { password, modules, ...userData } = updateUserDto;
 
     Object.assign(user, userData);
+
+    const nextProfile = userData.profile ?? user.profile;
+    if (nextProfile === UserProfile.ADMIN) {
+      user.modules = [];
+    } else if (modules !== undefined) {
+      user.modules = modules;
+    }
 
     if (password) {
       user.password = await bcrypt.hash(password, 10);

@@ -25,8 +25,10 @@ import { UpdateBlogDto } from './dto/update-blog.dto';
 import { PaginationDto } from '../common/pagination/pagination.dto';
 import { CurrentUser } from '../users/decorators/current-user.decorator';
 import { Profiles } from '../users/decorators/profiles.decorator';
+import { RequireModule } from '../users/decorators/modules.decorator';
 import { User } from '../users/entities/user.entity';
 import { UserProfile } from '../users/enums/user-profile.enum';
+import { ModuleKey } from '../users/enums/module-key.enum';
 import { ProfilesGuard } from '../users/guards/profiles.guard';
 
 @Controller('blog')
@@ -46,7 +48,8 @@ export class BlogController {
 
 @Controller('admin/blog')
 @UseGuards(ProfilesGuard)
-@Profiles(UserProfile.ADMIN)
+@Profiles(UserProfile.ADMIN, UserProfile.MARKETING)
+@RequireModule(ModuleKey.BLOG)
 export class AdminBlogController {
   constructor(private readonly blogService: BlogService) {}
 
