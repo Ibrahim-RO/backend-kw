@@ -3,6 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { HomepageDocument, HomepageSettings } from './entities/homepage-settings.entity';
 import { UpdateHomepageDto } from './dto/update-homepage.dto';
+import { User } from '../users/entities/user.entity';
+import { UserProfile } from '../users/enums/user-profile.enum';
+import { ModuleKey } from '../users/enums/module-key.enum';
 
 const defaults: HomepageDocument = {
   sections: [
@@ -31,12 +34,35 @@ export class HomepageService {
   }
   async getAdmin() { return this.row(); }
   async getPublished() { const row = await this.row(); return row.published ?? defaults; }
-  async updateDraft(dto: UpdateHomepageDto) { const row = await this.row(); row.draft = dto as HomepageDocument; return this.repository.save(row); }
-  async publish(dto: UpdateHomepageDto) {
+
+  async updateDraft(dto: UpdateHomepageDto, user: User) {
     const row = await this.row();
-    row.draft = dto as HomepageDocument;
+    row.draft = this.mergeAllowed(row.draft, dto, user);
+    return this.repository.save(row);
+  }
+
+  async publish(dto: UpdateHomepageDto, user: User) {
+    const row = await this.row();
+    row.draft = this.mergeAllowed(row.draft, dto, user);
     row.published = structuredClone(row.draft);
     row.published_at = new Date();
     return this.repository.save(row);
+  }
+
+  // `marketing` puede tener acceso a Homepage pero solo a algunas de sus 3
+  // pestañas (secciones/SEO/head-body). El PATCH siempre manda el documento
+  // completo, así que aquí se conserva el valor actual de cada parte que el
+  // usuario no tenga permitida, en vez de aceptar lo que venga en el body
+  // (protege también contra una llamada directa al endpoint, no solo oculta
+  // la pestaña en el editor).
+  private mergeAllowed(current: HomepageDocument, incoming: UpdateHomepageDto, user: User): HomepageDocument {
+    if (user.profile === UserProfile.ADMIN) return incoming as HomepageDocument;
+
+    const modules = user.modules ?? [];
+    return {
+      sections: modules.includes(ModuleKey.HOMEPAGE_SECTIONS) ? incoming.sections : current.sections,
+      seo: modules.includes(ModuleKey.HOMEPAGE_SEO) ? incoming.seo : current.seo,
+      integrations: modules.includes(ModuleKey.HOMEPAGE_CODE) ? incoming.integrations : current.integrations,
+    };
   }
 }
