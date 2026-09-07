@@ -1,7 +1,6 @@
 // Módulos del panel que se le pueden asignar a un usuario con perfil
 // `marketing` (ver ProfilesGuard + @RequireModule). `admin` siempre tiene
-// acceso a todos, sin importar este arreglo. Homepage/Blog ya existen;
-// SEO/Marketing se dejan listados para cuando se construyan esas secciones.
+// acceso a todos, sin importar este arreglo.
 //
 // Homepage además tiene 3 sub-permisos, uno por pestaña de su editor
 // (HomepageEditor.tsx): solo tienen efecto si el usuario también trae
@@ -14,6 +13,4 @@ export enum ModuleKey {
   HOMEPAGE_SEO = 'homepage:seo',
   HOMEPAGE_CODE = 'homepage:code',
   BLOG = 'blog',
-  SEO = 'seo',
-  MARKETING = 'marketing',
 }
