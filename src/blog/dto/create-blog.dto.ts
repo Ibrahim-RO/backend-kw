@@ -1,10 +1,12 @@
 import {
   IsDateString,
+  IsIn,
   IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
 } from 'class-validator';
+import { BlogStatus } from '../enums/blog-status.enum';
 
 export class CreateBlogDto {
   @IsString()
@@ -39,4 +41,14 @@ export class CreateBlogDto {
   @IsString()
   @IsOptional()
   extra_authors?: string;
+
+  // Solo borrador/publicado desde este DTO — una entrada no puede "nacer"
+  // eliminada, ese estado solo lo pone remove(). Sin esto, el switch de
+  // publicar del admin no podía marcar como publicado al crear, solo al
+  // editar después.
+  @IsIn([BlogStatus.DRAFT, BlogStatus.PUBLISHED], {
+    message: 'El estado debe ser borrador o publicado',
+  })
+  @IsOptional()
+  status?: BlogStatus;
 }
