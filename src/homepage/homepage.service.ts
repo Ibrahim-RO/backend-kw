@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { HomepageDocument, HomepageSettings } from './entities/homepage-settings.entity';
@@ -9,6 +9,7 @@ import { ModuleKey } from '../users/enums/module-key.enum';
 
 const defaults: HomepageDocument = {
   sections: [
+    { id: 'events', label: 'Eventos', visible: false, title: '', buttonUrl: '' },
     { id: 'hero', label: 'Portada', visible: true, title: 'Encuentra la casa de tus sueños', subtitle: 'El camino a tu nuevo hogar empieza aquí con los expertos.', imageUrl: '/Fondo_New_Natural.png', imageAlt: 'Residencia contemporánea' },
     { id: 'properties', label: 'Propiedades cerca de ti', visible: true, title: 'Propiedades cerca de ti', buttonLabel: 'Ver más...', buttonUrl: '/propiedades' },
     { id: 'awards', label: 'Reconocimientos', visible: true, title: 'Una compañía construida por agentes', body: 'Reconocimientos que respaldan nuestra experiencia.' },
@@ -30,6 +31,8 @@ export class HomepageService {
   private async row() {
     let row = await this.repository.findOne({ where: {}, order: { id: 'ASC' } });
     if (!row) row = await this.repository.save(this.repository.create({ draft: defaults, published: defaults, published_at: new Date() }));
+    row.draft = this.normalize(row.draft);
+    if (row.published) row.published = this.normalize(row.published);
     return row;
   }
   async getAdmin() { return this.row(); }
@@ -37,16 +40,30 @@ export class HomepageService {
 
   async updateDraft(dto: UpdateHomepageDto, user: User) {
     const row = await this.row();
-    row.draft = this.mergeAllowed(row.draft, dto, user);
+    row.draft = this.normalize(this.mergeAllowed(row.draft, dto, user), true);
     return this.repository.save(row);
   }
 
   async publish(dto: UpdateHomepageDto, user: User) {
     const row = await this.row();
-    row.draft = this.mergeAllowed(row.draft, dto, user);
+    row.draft = this.normalize(this.mergeAllowed(row.draft, dto, user), true);
     row.published = structuredClone(row.draft);
     row.published_at = new Date();
     return this.repository.save(row);
+  }
+
+  private normalize(document: HomepageDocument, validate = false): HomepageDocument {
+    const events = document.sections.find((section) => section.id === 'events') ?? defaults.sections[0];
+    const event = { ...events, label: 'Eventos', title: events.title.trim(), buttonUrl: events.buttonUrl?.trim() ?? '' };
+    if (validate && event.visible) {
+      let validUrl = /^\/(?!\/)/.test(event.buttonUrl) && !/[\\\s]/.test(event.buttonUrl);
+      try {
+        const url = new URL(event.buttonUrl);
+        validUrl ||= url.protocol === 'https:' || url.protocol === 'http:';
+      } catch { /* Relative URLs are checked above. */ }
+      if (!event.title || !validUrl) throw new BadRequestException('Eventos requiere un texto y un enlace válido (https:// o /ruta).');
+    }
+    return { ...document, sections: [event, ...document.sections.filter((section) => section.id !== 'events')] };
   }
 
   // `marketing` puede tener acceso a Homepage pero solo a algunas de sus 3
