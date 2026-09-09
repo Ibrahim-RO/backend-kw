@@ -32,12 +32,13 @@ export class AdminHomepageController {
 
   @Post('images')
   @UseInterceptors(FileInterceptor('image', {
-    limits: { fileSize: 8 * 1024 * 1024 },
-    fileFilter: (_request, file, callback) => callback(null, ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.mimetype)),
+    limits: { fileSize: 50 * 1024 * 1024 },
+    fileFilter: (_request, file, callback) => callback(null, ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm'].includes(file.mimetype)),
   }))
   async uploadImage(@UploadedFile() file: any, @Req() request: Request) {
-    if (!file) throw new BadRequestException('Selecciona una imagen JPG, PNG, WebP o GIF de máximo 8 MB');
-    const extensions: Record<string, string> = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/gif': '.gif' };
+    if (!file) throw new BadRequestException('Selecciona una imagen JPG, PNG, WebP o GIF (8 MB) o un video MP4 o WebM (50 MB)');
+    if (!file.mimetype.startsWith('video/') && file.size > 8 * 1024 * 1024) throw new BadRequestException('Máximo 8 MB para imágenes');
+    const extensions: Record<string, string> = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/gif': '.gif', 'video/mp4': '.mp4', 'video/webm': '.webm' };
     const extension = extensions[file.mimetype] ?? extname(file.originalname).toLowerCase();
     const directory = join(process.cwd(), 'uploads', 'homepage');
     await mkdir(directory, { recursive: true });
