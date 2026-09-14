@@ -96,3 +96,84 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Base de datos: migraciones
+
+La API y la CLI comparten `src/database/database.options.ts`. Ambas leen
+`DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD` y `DB_DATABASE` del entorno
+(o del `.env` en la carpeta `backend-kw`). `synchronize` y `migrationsRun` están
+ desactivados: arrancar la API no modifica el esquema. Ejecuta los comandos
+siguientes desde `backend-kw` (en PowerShell puedes usar `pnpm.cmd`).
+
+### Base nueva y vacía
+
+Crea la base PostgreSQL y configura las variables anteriores. Después:
+
+```bash
+pnpm migration:run
+pnpm start:dev
+```
+
+La migración `InitialSchema1789257600000` crea las cuatro tablas actuales,
+sus enums, claves únicas y relaciones. TypeORM registra cada migración aplicada
+en la tabla `migrations` y no vuelve a ejecutarla.
+
+### Base existente creada por synchronize
+
+Haz un respaldo antes de incorporar la base al historial. Primero comprueba
+que el esquema coincide con las entidades y que SOLO está pendiente la migración inicial:
+
+```bash
+pnpm schema:check
+pnpm migration:show
+```
+
+`schema:check` no aplica cambios: termina con código 0 si no hay diferencias,
+y con código 1 si las detecta. Si hay diferencias, no continúes con `--fake`:
+revisa y concilia el esquema en una copia de la base antes de registrar la inicial.
+
+Si el esquema coincide y solo está pendiente `InitialSchema1789257600000`:
+
+```bash
+pnpm migration:run --fake
+pnpm migration:show
+```
+
+`--fake` registra las migraciones pendientes sin ejecutar su SQL, conservando
+las tablas y los datos actuales. No lo uses sobre una base vacía ni con otras
+migraciones pendientes, porque también las marcaría como aplicadas.
+
+### Cambios futuros
+
+1. Aplica las migraciones pendientes en tu base de desarrollo.
+2. Modifica las entidades.
+3. Genera y revisa el SQL de la nueva migración:
+
+```bash
+pnpm migration:generate src/database/migrations/AddUserField
+pnpm migration:run
+pnpm schema:check
+```
+
+La generación compara las entidades contra la base configurada: usa una base
+de desarrollo con el historial al día. Guarda el archivo generado junto al
+cambio de entidad en el repositorio. No edites migraciones ya aplicadas; crea otra.
+Para escribir una migración manual: `pnpm migration:create src/database/migrations/Nombre`.
+
+### Producción y reversión
+
+```bash
+pnpm build
+pnpm migration:show:prod
+pnpm migration:run:prod
+pnpm start:prod
+```
+
+Los comandos de producción usan el JavaScript compilado en `dist`, sin ts-node.
+Ejecuta las migraciones una sola vez por despliegue, antes de iniciar las instancias.
+El proceso necesita las mismas variables de conexión y permisos para modificar el esquema.
+
+`pnpm migration:revert` (o `pnpm migration:revert:prod`) ejecuta el `down` de la
+última migración. Revisa ese SQL antes: revertir la inicial elimina las cuatro
+tablas y sus datos, incluso si se registró con `--fake`. Un rollback no sustituye
+un respaldo.

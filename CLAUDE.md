@@ -60,7 +60,7 @@ No repliques esta forma para un recurso nuevo que sí sea una lista de entidades
 
 ## Base de datos
 
-Por ahora se usa `synchronize: true` en TypeORM (no hay migraciones todavía). Los cambios de esquema se reflejan solos al reiniciar el backend en desarrollo.
+Se usa `synchronize: false` y migraciones en `src/database/migrations`. La API y la CLI comparten `src/database/database.options.ts`. Ejecuta `pnpm migration:run` antes de arrancar; para cambios de entidades, genera y revisa una nueva migración. Consulta README.md para incorporar bases existentes sin perder datos.
 
 ## Tests
 
